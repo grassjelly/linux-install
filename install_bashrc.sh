@@ -1,5 +1,6 @@
 #!/bin/sh
 echo "ip=\$(ip addr show wlan0 | grep -o 'inet [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' | grep -o [0-9].*)"  >> ~/.bashrc
+echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 echo "export ROS_MASTER_URI=http://\$ip:11311"  >> ~/.bashrc
 echo "export ROS_HOSTNAME=\$ip"  >> ~/.bashrc
 
