@@ -21,12 +21,12 @@ source ~/.bashrc
 #Install rosinstall
 sudo apt-get -y install python-rosinstall
 
+echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+
 #create catkin workspace
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
 catkin_init_workspace
 cd ~/catkin_ws/
 catkin_make
-
-cd 
-git clone https://github.com/grassjelly/lino_visualize.git

@@ -10,10 +10,10 @@ sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net --recv-key 0xB01FA
 
 #ROS Installation
 sudo apt-get -y  update
-sudo apt-get install ros-indigo-ros-base
+sudo apt-get -y install ros-indigo-ros-base
 
 #Initialize rosdep
-sudo apt-get install python-rosdep
+sudo apt-get -y install python-rosdep
 sudo rosdep init
 rosdep update
 
@@ -23,6 +23,10 @@ source ~/.bashrc
 
 #Install rosinstall
 sudo apt-get -y install python-rosinstall
+
+
+echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
 
 #create catkin workspace
 mkdir -p ~/catkin_ws/src
