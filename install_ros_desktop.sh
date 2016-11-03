@@ -24,6 +24,9 @@ sudo apt-get -y install python-rosinstall
 echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 
+#make sure your system is able to compile using CMake
+sudo apt-get -y install build-essential
+
 #create catkin workspace
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
