@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+#Check if user has  configured Ubuntu repositories(ROS ARM Installation Section 2.1"
+echo ""
+echo "Have you configured your Ubuntu repositories?" 
+echo "You must allow \"restricted\", \"universe\" , \"multiverse\"."
+echo "https://help.ubuntu.com/community/Repositories/Ubuntu"
+echo ""
+echo "PRESS [ENTER] TO CONTINUE"
+read
 
 #Set Locale
 sudo update-locale LANG=C LANGUAGE=C LC_ALL=C LC_MESSAGES=POSIX

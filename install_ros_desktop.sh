@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+#Check if user has  configured Ubuntu repositories(ROS ARM Installation Section 2.1"
+echo ""
+echo "Have you configured your Ubuntu repositories?" 
+echo "You must allow \"restricted\", \"universe\" , \"multiverse\"."
+echo "https://help.ubuntu.com/community/Repositories/Ubuntu"
+echo ""
+echo "PRESS [ENTER] TO CONTINUE"
+read
+
 #Setup the sources.list
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 
