@@ -9,9 +9,8 @@ sudo apt-get -y install dkms bcmwl-kernel-source
 sudo apt-get -y install arandr
 
 #Install Atom IDE
-curl https://atom.io/download/deb
-sudo dpkg deb
-sudo apt-get -y -f  installer
+sudo add-apt-repository ppa:webupd8team/atom
+sudo apt update; sudo apt install atom
 
 #Install Sound Driver
 sudo apt-get install pulseaudio-module-udev
