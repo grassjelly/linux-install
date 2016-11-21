@@ -14,10 +14,6 @@ echo "alias robot_navigate=\"\$l_nav\""  >> ~/.bashrc
 echo "alias robot_slam=\"\$l_slam\""  >> ~/.bashrc
 echo "alias robot_teleop=\"\$l_teleop\""  >> ~/.bashrc
 
-echo "r_nav=\"\"" >> ~/.bashrc
-echo "r_slam=\"\"" >> ~/.bashrc
-echo "r_odom=\"\"" >> ~/.bashrc
-
-echo "alias rviz_navigate=\"rosrun rviz rviz -d \$r_nav\""  >> ~/.bashrc
-echo "alias rviz_slam=\"rosrun rviz rviz -d \$r_slam\""  >> ~/.bashrc
-echo "alias rviz_odometry=\"rosrun rviz rviz -d \$r_odom\""  >> ~/.bashrc
+echo "alias rviz_navigate=\"rosrun rviz rviz -d ~/catkin_ws/src/lino_visualize/rviz/navigate.rviz\""  >> ~/.bashrc
+echo "alias rviz_slam=\"rosrun rviz rviz -d ~/catkin_ws/src/lino_visualize/rviz/slam.rviz\""  >> ~/.bashrc
+echo "alias rviz_odometry=\"rosrun rviz rviz -d ~/catkin_ws/src/lino_visualize/rviz/odometry.rviz\""  >> ~/.bashrc
