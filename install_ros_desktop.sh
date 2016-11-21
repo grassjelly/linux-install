@@ -36,9 +36,8 @@ source ~/.bashrc
 #make sure your system is able to compile using CMake
 sudo apt-get -y install build-essential
 
-#create catkin workspace
-mkdir -p ~/catkin_ws/src
-cd ~/catkin_ws/src
-catkin_init_workspace
-cd ~/catkin_ws/
-catkin_make
+echo ""
+echo "ROS Installation Done!" 
+echo "You can create your catkin workspace now. https://wiki.ros.org/catkin/Tutorials/create_a_workspace"
+
+
