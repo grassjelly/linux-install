@@ -17,7 +17,7 @@ sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C
 
 #ROS Installation
 sudo apt-get -y  update
-sudo apt-get install ros-indigo-ros-base
+sudo apt-get install ros-kinetic-ros-base
 
 #Initialize rosdep
 sudo rosdep init
