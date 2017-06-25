@@ -8,9 +8,10 @@ sudo apt-get -y install dkms bcmwl-kernel-source
 #For screen
 sudo apt-get -y install arandr
 
-#Install Atom IDE
-sudo add-apt-repository ppa:webupd8team/atom
-sudo apt update; sudo apt install atom
+#Install IDE
+wget https://go.microsoft.com/fwlink/?LinkID=760868 -O vcode.deb
+sudo dpkg -i vcode.deb
+sudo apt-get install -f
 
 #Install Sound Driver
 sudo apt-get install pulseaudio-module-udev
