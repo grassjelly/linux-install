@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -e
+
+sudo apt-get install -y git
+
+#install ROS
+cd /tmp
+git clone https://github.com/linorobot/rosme
+cd rosme
+./install
+
+#install platform.io
+sudo easy_install pip
+sudo pip install -U platformio
+sudo rm -rf ~/.platformio/
+
+#install visual studio code
+wget -O vscode.deb https://go.microsoft.com/fwlink/?LinkID=760868
+sudo dpkg -i vscode.deb
+sudo apt-get install -f
+
+#install google chrome
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo dpkg -i google-chrome-stable_current_amd64.deb
+sudo apt-get -f install -y
+
+#install CPU monitor
+sudo apt install -y indicator-multiload
+
+
+#install flatabulous
+wget -q -O - http://archive.getdeb.net/getdeb-archive.key | sudo apt-key add -
+sudo sh -c 'echo "deb http://archive.getdeb.net/ubuntu xenial-getdeb apps" >> /etc/apt/sources.list.d/getdeb.list'
+sudo apt-get update
+sudo apt-get install -y ubuntu-tweak
+
+yes | sudo add-apt-repository ppa:noobslab/themes
+sudo apt-get update
+sudo apt-get install flatabulous-theme
+
+yes | sudo add-apt-repository ppa:noobslab/icons
+sudo apt-get update
+sudo apt-get install -y ultra-flat-icons
+
+
+echo "ip=\$(ip addr show wlan0 | grep -o 'inet [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' | grep -o [0-9].*)" >> ~/.bashrc
+echo "export ROS_MASTER_URI=http://\$ip:11311"  >> ~/.bashrc
+echo "export ROS_HOSTNAME=\$ip" >> ~/.bashrc
