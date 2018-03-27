@@ -10,6 +10,9 @@ git clone https://github.com/linorobot/rosme
 cd rosme
 ./install
 
+#install python ros-install
+sudo apt-get install -y python-rosinstall
+
 #install platform.io
 sudo easy_install pip
 sudo pip install -U platformio
