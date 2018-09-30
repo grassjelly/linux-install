@@ -6,7 +6,7 @@ set -e
 sudo apt-get purge nvidia-*
 
 #THIS IS ONLY APPLIES TO ME!
-sudo apt-get install nvidia-390
+#sudo apt-get install nvidia-390
 
 #install CUDA
 cd /tmp
