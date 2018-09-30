@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -e
+
+#install GPU driver
+sudo apt-get purge nvidia-*
+
+#THIS IS ONLY APPLIES TO ME!
+sudo apt-get install nvidia-390
+
+#install CUDA
+cd /tmp
+wget https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers/cuda_9.0.176_384.81_linux-run
+chmod +x cuda_9.0.176_384.81_linux-run
+./cuda_9.0.176_384.81_linux-run --extract=/tmp
+sudo ./cuda-linux.9.0.176-22781540.run
+bash -c "echo /usr/local/cuda/lib64/ > /etc/ld.so.conf.d/cuda.conf"
+sudo ldconfig
+
+#install cudnn
+cd /tmp
+wget https://s3.amazonaws.com/open-source-william-falcon/cudnn-9.0-linux-x64-v7.1.tgz  
+sudo tar -xzvf cudnn-9.0-linux-x64-v7.1.tgz  
+sudo cp cuda/include/cudnn.h /usr/local/cuda/include
+sudo cp cuda/lib64/libcudnn* /usr/local/cuda/lib64
+sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
+
+#install jupyter notebook
+sudo apt-get install python3-pip
+pip3 install --upgrade pip
+pip3 install jupyter
+
+#install miniconda
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh  
+
+#install tensorflow
+conda create -n tensorflow
+source activate tensorflow   
+pip install tf-nightly-gpu
+
+echo "export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64"" >> $HOME/.bashrc
+echo "export CUDA_HOME=/usr/local/cuda" >> $HOME/.bashrc
+echo "export PATH=\"$PATH:/usr/local/cuda/bin\"" >> $HOME/.bashrc
+
+
+
+
