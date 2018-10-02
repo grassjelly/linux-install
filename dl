@@ -7,6 +7,7 @@ set -e
 
 #THIS IS ONLY APPLIES TO ME!
 #sudo apt-get install nvidia-390
+#sudo apt-mark hold nvidia-390
 
 #install CUDA
 cd /tmp
