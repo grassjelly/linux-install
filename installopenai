@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -e
+
+export PATH="$HOME/miniconda3/bin:\$PATH"
+
+y | conda create -n openai pip
+source activate openai
+y | pip install setuptools==39.1.0
+y | conda install -n openai keras-gpu
+# y | conda install -n openai tensorflow-gpu==1.7
+y | conda install -n openai tensorflow-gpu
+y | conda install -n openai cython
+
+y | pip install gym
+y | conda install -n openai jupyter
+y | pip install jupyterthemes
+jt -t onedork
+
