@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+set -e
+
+export PATH="$PATH:$HOME/miniconda3/bin"
+
+cd $HOME
+rm -rf sophus
+rm -rf gym-gazebo
+rm -rf Theano
+y | conda env remove --name openai-gym
+
+# Create conda environment
+y | conda create -n openai-gym pip 
+source $HOME/miniconda3/bin/activate openai-gym
+
+# Install python dependencies
+y | pip install numpy
+y | pip install catkin_pkg
+y | pip install rospkg
+y | pip install gym
+y | pip install matplotlib
+y | pip install h5py
+y | pip install pyyaml
+y | pip install scikit-image
+y | pip install netifaces
+y | pip install defusedxml
+y | pip install keras
+y | conda install -n openai-gym -c menpo opencv3
+
+# Install ROS Kinetic dependencies
+sudo apt-get -y install python3-pyqt4
+
+sudo apt-get -y install \
+cmake gcc g++ qt4-qmake libqt4-dev \
+libusb-dev libftdi-dev \
+python3-defusedxml python3-vcstool \
+ros-kinetic-octomap-msgs \
+ros-kinetic-joy \
+ros-kinetic-geodesy \
+ros-kinetic-octomap-ros \
+ros-kinetic-control-toolbox \
+ros-kinetic-pluginlib \
+ros-kinetic-trajectory-msgs \
+ros-kinetic-control-msgs \
+ros-kinetic-std-srvs \
+ros-kinetic-nodelet \
+ros-kinetic-urdf \
+ros-kinetic-rviz \
+ros-kinetic-kdl-conversions \
+ros-kinetic-eigen-conversions \
+ros-kinetic-tf2-sensor-msgs \
+ros-kinetic-pcl-ros \
+ros-kinetic-navigation \
+ros-kinetic-turtlebot-gazebo \
+ros-kinetic-mav-msgs
+
+# Install Sophus
+
+cd /tmp
+git clone https://github.com/stonier/sophus -b release/0.9.1-kinetic
+cd sophus
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+
+# Download and install Gazebo gym
+cd $HOME
+git clone https://github.com/erlerobot/gym-gazebo
+cd gym-gazebo
+pip install -e .
+
+# Install Theano
+cd $HOME
+git clone git://github.com/Theano/Theano.git
+cd Theano/
+python3 setup.py develop
+
+cd $HOME/gym-gazebo/gym_gazebo/envs/installation
+bash setup_$ROS_DISTRO.bash
