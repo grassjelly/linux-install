@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+#set -e
 
 GAZEBO_CONFIG_DIR=$(dirname "$(readlink -f "$0")")
 
@@ -14,11 +14,11 @@ conda env remove --name openai-gym --yes
 
 # Create conda environment
 conda create --name openai-gym pip python=3.5 --yes
-source $HOME/miniconda3/bin/activate openai-gym
-
+#source $HOME/miniconda3/bin/activate openai-gym
+source activate openai-gym
 # Install python dependencies
-yes | pip install \
-numpy \
+yes | pip install 
+numpy \ 
 catkin_pkg \
 rospkg \
 gym \
@@ -32,7 +32,8 @@ vcstool \
 keras \
 tf-nightly-gpu
 
-conda install -n openai-gym \
+conda install -n \
+openai-gym \
 opencv \
 defusedxml \
 pyqt boost \
@@ -60,11 +61,20 @@ ros-kinetic-tf2-sensor-msgs \
 ros-kinetic-pcl-ros \
 ros-kinetic-navigation \
 ros-kinetic-ar-track-alvar \
-ros-kinetic-mav-msgs \
 ros-kinetic-rqt-robot-dashboard \ 
 ros-kinetic-rqt-plot
 
-sudo apt-get -y install libspnav-dev libbluetooth-dev libcwiid-dev pyqt4-dev-tools
+# Install Gazebo
+sudo apt-get remove ros-kinetic-gazebo* 
+sudo apt-get upgrade
+sudo apt-get install ros-kinetic-gazebo8*
+
+sudo apt-get -y install \
+libspnav-dev \
+libbluetooth-dev \
+libcwiid-dev \
+pyqt4-dev-tools \
+libusb-dev libftdi-dev
 
 # Install Sophus
 cd /tmp
@@ -88,6 +98,9 @@ git clone git://github.com/Theano/Theano.git
 cd Theano/
 python setup.py develop
 
+source deactivate
 cd $HOME/gym-gazebo/gym_gazebo/envs/installation
-cp $GAZEBO_CONFIG_DIR/gazebo.repos .
+cp -r $GAZEBO_CONFIG_DIR/*.patch .
+patch < gazebo_repos.patch
+patch < setup_kinetic.patch
 bash setup_$ROS_DISTRO.bash
