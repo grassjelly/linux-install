@@ -15,10 +15,9 @@ conda env remove --name openai-gym --yes
 # Create conda environment
 conda create --name openai-gym pip python=3 --yes
 source $HOME/miniconda3/bin/activate openai-gym
-# source activate openai-gym
+
 # Install python dependencies
-yes | pip install \
-numpy \
+yes | pip install numpy \
 catkin_pkg \
 rospkg \
 gym \
@@ -28,13 +27,12 @@ pyyaml \
 scikit-image \
 netifaces \
 defusedxml \
-keras \
+opencv-python \
+keras 
 
-conda install -n \
-openai-gym \
-opencv \
+conda install -n openai-gym \
 defusedxml \
-pyqt boost \
+pyqt \
 tensorflow-gpu \
 --yes 
 
@@ -78,6 +76,12 @@ libcwiid-dev \
 pyqt4-dev-tools \
 libusb-dev
 
+# Download and install Gazebo gym
+cd $HOME
+git clone https://github.com/erlerobot/gym-gazebo
+cd gym-gazebo
+yes | pip install -e .
+
 # Install Sophus
 cd /tmp
 git clone https://github.com/stonier/sophus -b release/0.9.1-kinetic
@@ -87,12 +91,6 @@ cd build
 cmake ..
 make
 sudo make install
-
-# Download and install Gazebo gym
-cd $HOME
-git clone https://github.com/erlerobot/gym-gazebo
-cd gym-gazebo
-pip install -e .
 
 # Install Theano
 cd $HOME
@@ -108,3 +106,4 @@ patch < setup_kinetic.patch
 bash setup_kinetic.bash
 
 echo "alias gym_ws=\"source $HOME/gym-gazebo/gym_gazebo/envs/installation/catkin_ws/devel/setup.bash && source $HOME/miniconda3/bin/activate openai-gym\"" >> $HOME/.bashrc
+# cd /opt/ros/kinetic/lib/python2.7/dist-packages/ && sudo mv cv2.so cv2_old.so
