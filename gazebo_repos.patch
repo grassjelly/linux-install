@@ -1,0 +1,25 @@
+--- gazebo.repos	2018-12-03 20:51:55.293815577 +0800
++++ gazebo_new.repos	2018-12-03 20:52:38.010198500 +0800
+@@ -27,11 +27,11 @@
+   ecl_core:
+     type: git
+     url: https://github.com/stonier/ecl_core
+-    version: devel
++    version: release/0.61-indigo-kinetic
+   ecl_lite:
+     type: git
+     url: https://github.com/stonier/ecl_lite
+-    version: devel
++    version: release/0.61-indigo-kinetic 
+   ecl_navigation:
+     type: git
+     url: https://github.com/stonier/ecl_navigation
+@@ -39,7 +39,7 @@
+   ecl_tools:
+     type: git
+     url: https://github.com/stonier/ecl_tools
+-    version: devel
++    version: release/0.61-indigo-kinetic
+   driver_base:
+     type: git
+     url: https://github.com/ros-drivers/driver_common.git
