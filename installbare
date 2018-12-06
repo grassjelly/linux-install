@@ -48,11 +48,15 @@ sudo apt-get install unity-tweak-tool
 
 sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/Horst3180/xUbuntu_16.04/ /' >> /etc/apt/sources.list.d/arc-theme.list"
 sudo apt-get update
-sudo apt-get install arc-theme
+sudo apt-get install -y arc-theme
 
-sudo add-apt-repository ppa:noobslab/themes
+yes | sudo add-apt-repository ppa:noobslab/themes
 sudo apt-get update
-sudo apt-get install arc-flatabulous-theme
+sudo apt-get install -y arc-flatabulous-theme
+
+yes | sudo add-apt-repository ppa:noobslab/icons
+sudo apt-get update
+sudo apt-get install -y ultra-flat-icons
 
 echo "ip=\$(ip addr show wlan0 | grep -o 'inet [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' | grep -o [0-9].*)" >> ~/.bashrc
 echo "export ROS_MASTER_URI=http://\$ip:11311"  >> ~/.bashrc
