@@ -28,12 +28,11 @@ scikit-image \
 netifaces \
 defusedxml \
 opencv-python \
-keras 
+empy
 
 conda install -n openai-gym \
 defusedxml \
 pyqt \
-tensorflow-gpu \
 --yes 
 
 # Install ROS Kinetic dependencies
@@ -59,7 +58,29 @@ ros-kinetic-pcl-ros \
 ros-kinetic-navigation \
 ros-kinetic-ar-track-alvar \
 ros-kinetic-rqt-robot-dashboard \
-ros-kinetic-rqt-plot
+ros-kinetic-rqt-plot \
+ros-kinetic-control-toolbox \
+ros-kinetic-ecl-core \
+ros-kinetic-ecl-lite \
+ros-kinetic-ecl-navigation \
+ros-kinetic-ecl-tools \
+ros-kinetic-driver-base \
+ros-kinetic-image-common \
+ros-kinetic-joystick-drivers \
+ros-kinetic-kobuki \
+ros-kinetic-kobuki-core \
+ros-kinetic-kobuki-msgs \
+ros-kinetic-navigation \
+ros-kinetic-pcl-ros \
+ros-kinetic-realtime-tools \
+ros-kinetic-ros-control \
+ros-kinetic-roslint \
+ros-kinetic-turtlebot \
+ros-kinetic-turtlebot-create \
+ros-kinetic-xacro \
+ros-kinetic-yocs-msgs \
+ros-kinetic-yujin-ocs \
+ros-kinetic-mav-msgs
 
 # Install Gazebo
 # sudo apt-get remove ros-kinetic-gazebo* 
@@ -98,12 +119,13 @@ git clone git://github.com/Theano/Theano.git
 cd Theano/
 python setup.py develop
 
-source $HOME/miniconda3/bin/deactivate
 cd $HOME/gym-gazebo/gym_gazebo/envs/installation
 cp -r $GAZEBO_CONFIG_DIR/*.patch .
 patch < gazebo_repos.patch
-patch < setup_kinetic.patch
 bash setup_kinetic.bash
+
+yes | pip install keras
+conda install -n openai-gym tensorflow-gpu --yes
 
 echo "alias gym_ws=\"source $HOME/gym-gazebo/gym_gazebo/envs/installation/catkin_ws/devel/setup.bash && source $HOME/miniconda3/bin/activate openai-gym\"" >> $HOME/.bashrc
 # cd /opt/ros/kinetic/lib/python2.7/dist-packages/ && sudo mv cv2.so cv2_old.so
