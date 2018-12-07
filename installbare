@@ -58,6 +58,9 @@ yes | sudo add-apt-repository ppa:noobslab/icons
 sudo apt-get update
 sudo apt-get install -y ultra-flat-icons
 
+sudo apt-get install -y dconf-cli
+git clone https://github.com/GalaticStryder/gnome-terminal-colors-dracula
+
 echo "ip=\$(ip addr show wlan0 | grep -o 'inet [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' | grep -o [0-9].*)" >> ~/.bashrc
 echo "export ROS_MASTER_URI=http://\$ip:11311"  >> ~/.bashrc
 echo "export ROS_HOSTNAME=\$ip" >> ~/.bashrc
