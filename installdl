@@ -45,7 +45,7 @@ export PATH="$HOME/miniconda3/bin:$PATH"
 # pip3 install tf-nightly-gpu
 # source deactivate
 
-echo "alias helloconda=\". /home/juan/miniconda3/etc/profile.d/conda.sh\"" >> $HOME/.bashrc
+echo "alias helloconda=\". $HOME/miniconda3/etc/profile.d/conda.sh\"" >> $HOME/.bashrc
 
 echo "export LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64"" >> $HOME/.bashrc
 echo "export CUDA_HOME=/usr/local/cuda" >> $HOME/.bashrc
