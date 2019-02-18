@@ -6,7 +6,7 @@ set -e
 sudo apt-get install -y git
 
 #install curl
-sudo apt-get install - y curl
+sudo apt-get install -y curl
 
 #python-deps
 sudo apt-get install -y python-setuptools python-dev build-essential
