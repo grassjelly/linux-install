@@ -8,29 +8,12 @@ sudo apt-get install -y git
 #install curl
 sudo apt-get install -y curl
 
-#python-deps
-sudo apt-get install -y python-setuptools python-dev build-essential
-
-#PPA
-sudo apt-get install -y software-properties-common
+#install conda
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh  
 
 #install Docker
-curl -fsSL get.docker.com -o get-docker.sh
-sh get-docker.sh
-
-#install python ros-install
-sudo apt-get install -y python-rosinstall
-
-#install nodejs
-curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-sudo apt-get install -y nodejs
-sudo apt-get install -y npm
-sudo ln -s "$(which nodejs)" /usr/bin/node
-
-#install platform.io
-sudo easy_install pip
-sudo pip install -U platformio
-sudo rm -rf ~/.platformio/
+sudo apt install docker.io
 
 #install visual studio code
 wget -O vscode.deb https://go.microsoft.com/fwlink/?LinkID=760868
@@ -42,36 +25,15 @@ wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo dpkg -i google-chrome-stable_current_amd64.deb
 sudo apt-get -f install -y
 
-#install virtual box
-wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
-wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
-sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -sc) contrib" >> /etc/apt/sources.list'
-sudo apt-get update
-sudo apt-get install -y virtualbox-5.2
-
-#install CPU monitor
-sudo apt install -y indicator-multiload
-
-#install themes
-sudo apt-get install notify-osd
-sudo apt-get install overlay-scrollbar
-sudo apt-get install unity-tweak-tool
-
-sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/Horst3180/xUbuntu_16.04/ /' >> /etc/apt/sources.list.d/arc-theme.list"
-sudo apt-get update
-sudo apt-get install -y arc-theme --allow-unauthenticated
-
-yes | sudo add-apt-repository ppa:noobslab/themes
-sudo apt-get update
-sudo apt-get install -y arc-flatabulous-theme
-
-yes | sudo add-apt-repository ppa:noobslab/icons
-sudo apt-get update
-sudo apt-get install -y ultra-flat-icons
-
-sudo apt-get install -y dconf-cli
-git clone https://github.com/GalaticStryder/gnome-terminal-colors-dracula
+#install system-monitor
+sudo apt install gnome-shell-extension-system-monitor
+gnome-extensions enable system-monitor@paradoxxx.zero.gmail.com
+killall -3 gnome-shell
 
 echo "ip=\$(ip addr show wlan0 | grep -o 'inet [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' | grep -o [0-9].*)" >> ~/.bashrc
 echo "export ROS_MASTER_URI=http://\$ip:11311"  >> ~/.bashrc
 echo "export ROS_HOSTNAME=\$ip" >> ~/.bashrc
+
+echo "alias helloconda=\". \$HOME/miniconda3/etc/profile.d/conda.sh\"" >> ~/.bashrc
+echo "alias r2=\"source /opt/ros/foxy/setup.bash\"" >> ~/.bashrc
+echo "alias r1=\"source /opt/ros/noetic/setup.bash\"" >> ~/.bashrc
