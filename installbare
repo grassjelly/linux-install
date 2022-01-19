@@ -30,6 +30,22 @@ sudo apt install gnome-shell-extension-system-monitor
 gnome-extensions enable system-monitor@paradoxxx.zero.gmail.com
 killall -3 gnome-shell
 
+#install gestures
+#https://kaigo.medium.com/mac-like-gestures-on-ubuntu-20-04-dell-xps-15-7ea6e3be7f76
+sudo apt install python3 python3-gi python-gobject meson xdotool libinput-tools gettext
+sudo gpasswd -a $USER input
+git clone https://github.com/bulletmark/libinput-gestures.git
+cd libinput-gestures
+sudo make install
+sudo ./libinput-gestures-setup install
+libinput-gestures-setup start
+libinput-gestures-setup autostart
+git clone https://gitlab.com/cunidev/gestures
+cd gestures
+meson build --prefix=/usr
+ninja -C build
+sudo ninja -C build install
+
 echo "ip=\$(ip addr show wlan0 | grep -o 'inet [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+' | grep -o [0-9].*)" >> ~/.bashrc
 echo "export ROS_MASTER_URI=http://\$ip:11311"  >> ~/.bashrc
 echo "export ROS_HOSTNAME=\$ip" >> ~/.bashrc
