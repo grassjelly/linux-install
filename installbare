@@ -1,36 +1,24 @@
 #!/usr/bin/env bash
 
+NVIDIA_DRIVER=525
+
 set -e
 
-#install git
-sudo apt-get install -y git
+sudo apt install -y \
+  git \
+  wget \
+  curl 
 
-#install curl
-sudo apt-get install -y curl
+# Install Docker
+curl -sSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+newgrp docker <<EONG
+echo "Docker Will Restart..."
+EONG
+sudo systemctl restart docker
 
-#install conda
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh  
+# Install Nvidia driver
+sudo apt install nvidia-driver-$NVIDIA_DRIVER
 
-#install Docker
-sudo apt install docker.io
-
-#install visual studio code
-wget -O vscode.deb https://go.microsoft.com/fwlink/?LinkID=760868
-sudo dpkg -i vscode.deb
-sudo apt-get install -f
-
-#install google chrome
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo dpkg -i google-chrome-stable_current_amd64.deb
-sudo apt-get -f install -y
-
-#install system-monitor
-sudo apt install gnome-shell-extension-system-monitor
-gnome-extensions enable system-monitor@paradoxxx.zero.gmail.com
-killall -3 gnome-shell
-
-echo "alias helloconda=\". \$HOME/miniconda3/etc/profile.d/conda.sh\"" >> ~/.bashrc
-echo "alias foxy=\"source /opt/ros/foxy/setup.bash\"" >> ~/.bashrc
-echo "alias galactic=\"source /opt/ros/noetic/setup.bash\"" >> ~/.bashrc
-echo "alias humble=\"source /opt/ros/humble/setup.bash\"" >> ~/.bashrc
+echo '''alias clean_containers="docker stop $(docker ps -a -q) && docker rm $(docker ps --filter status=exited -q)"''' >> ~/.bashrc
+echo '''alias clean_images="docker rmi \$(docker images -f \"dangling=true\" -q)"''' >> ~/.bashrc
