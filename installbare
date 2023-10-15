@@ -23,3 +23,5 @@ sudo apt update && sudo apt install -y nvidia-driver-$NVIDIA_DRIVER
 
 echo '''alias clean_containers="docker stop $(docker ps -a -q) && docker rm $(docker ps --filter status=exited -q)"''' >> ~/.bashrc
 echo '''alias clean_images="docker rmi \$(docker images -f \"dangling=true\" -q)"''' >> ~/.bashrc
+
+echo "INSTALLATION DONE!"
