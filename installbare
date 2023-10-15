@@ -21,6 +21,11 @@ sudo systemctl restart docker
 # Install Nvidia driver
 sudo apt update && sudo apt install -y nvidia-driver-$NVIDIA_DRIVER
 
+# Install Nvidia Runtime
+sudo apt update && sudo apt install -y nvidia-container-runtime
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl daemon-reload && sudo systemctl restart docker
+
 echo '''alias clean_containers="docker stop $(docker ps -a -q) && docker rm $(docker ps --filter status=exited -q)"''' >> ~/.bashrc
 echo '''alias clean_images="docker rmi \$(docker images -f \"dangling=true\" -q)"''' >> ~/.bashrc
 
