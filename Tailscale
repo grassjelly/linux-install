@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -e
+curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/jammy.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/jammy.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.listiniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh  
+export PATH="$HOME/miniconda3/bin:$PATH"
+
+# #install tensorflow
+# conda create -n tensorflow
+# source activate tensorflow   
+# pip3 install tf-nightly-gpu
+# source deactivate
+
+echo "alias helloconda=\". $HOME/miniconda3/etc/profile.d/conda.sh\"" >> $HOME/.bashrc
+
+echo "export LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64"" >> $HOME/.bashrc
+echo "export CUDA_HOME=/usr/local/cuda" >> $HOME/.bashrc
+echo "export PATH=\"/usr/local/cuda/bin:\$PATH:\"" >> $HOME/.bashrc
+
+
+
+
