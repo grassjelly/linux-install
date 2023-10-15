@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# Reference: https://gist.github.com/rbtr/554e5730a697c1472697
 # Shell script to install your public key on a remote machine
 # Takes the remote machine name as an argument.
 # Obviously, the remote machine must accept password authentication,
