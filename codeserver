@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+
+set -e 
+
+curl -fsSL https://code-server.dev/install.sh | sh
+
+TAILSCALE_IP=$(tailscale ip -4)
+
+echo -e "bind-addr: $TAILSCALE_IP:8100\nauth: none" > $HOME/.config/code-server/config.yaml
+
+sudo systemctl enable --now code-server@$USER
