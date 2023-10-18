@@ -19,24 +19,26 @@ echo "Docker Will Restart..."
 EONG
 sudo systemctl restart docker
 
-# Install Nvidia driver
-# Ref: https://cloud.google.com/compute/docs/gpus/install-drivers-gpu
-cd /tmp 
-curl https://raw.githubusercontent.com/GoogleCloudPlatform/compute-gpu-installation/main/linux/install_gpu_driver.py --output install_gpu_driver.py
-sudo python3 install_gpu_driver.py
+if [ -z $1 ]; then
+  # Install Nvidia driver
+  # Ref: https://cloud.google.com/compute/docs/gpus/install-drivers-gpu
+  cd /tmp 
+  curl https://raw.githubusercontent.com/GoogleCloudPlatform/compute-gpu-installation/main/linux/install_gpu_driver.py --output install_gpu_driver.py
+  sudo python3 install_gpu_driver.py
 
-# Install Nvidia Runtime
-# Ref: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
-curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+  # Install Nvidia Runtime
+  # Ref: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+  curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+    && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
     sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list 
 
-sudo apt update && sudo apt install -y nvidia-container-toolkit
-sudo nvidia-ctk runtime configure --runtime=docker
-sudo systemctl daemon-reload && sudo systemctl restart docker
+  sudo apt update && sudo apt install -y nvidia-container-toolkit
+  sudo nvidia-ctk runtime configure --runtime=docker
+  sudo systemctl daemon-reload && sudo systemctl restart docker
 
-echo '''alias clean_containers="docker stop $(docker ps -a -q) && docker rm $(docker ps --filter status=exited -q)"''' >> ~/.bashrc
-echo '''alias clean_images="docker rmi \$(docker images -f \"dangling=true\" -q)"''' >> ~/.bashrc
+  echo '''alias clean_containers="docker stop $(docker ps -a -q) && docker rm $(docker ps --filter status=exited -q)"''' >> ~/.bashrc
+  echo '''alias clean_images="docker rmi \$(docker images -f \"dangling=true\" -q)"''' >> ~/.bashrc
+fi
 
 echo "INSTALLATION DONE!"
