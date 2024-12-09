@@ -35,7 +35,7 @@ if [ -z $1 ]; then
     sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list 
 
   sudo apt update && sudo apt install -y nvidia-container-toolkit
-  sudo nvidia-ctk runtime configure --runtime=docker
+  sudo nvidia-ctk runtime configure --runtime=docker --set-as-default
   sudo systemctl daemon-reload && sudo systemctl restart docker
 
   echo '''alias clean_containers="docker stop $(docker ps -a -q) && docker rm $(docker ps --filter status=exited -q)"''' >> ~/.bashrc
