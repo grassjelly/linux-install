@@ -3,6 +3,8 @@
 set -e
 
 # Install Nvidia driver
+sudo apt-get update -y 
+sudo apt-get install -y ubuntu-drivers-common
 sudo ubuntu-drivers autoinstall
 
 echo "INSTALLATION DONE!"
