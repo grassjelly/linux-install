@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
 
-NVIDIA_DRIVER=525
-
 set -e
 
-sudo apt update && sudo apt install -y \
-  git \
-  wget \
-  curl \
-  openssh-server \
-  xorg \
-  net-tools
+#Install curl
+sudo apt update && sudo apt install -y curl
 
 # Install Docker
 curl -sSL https://get.docker.com | sudo sh

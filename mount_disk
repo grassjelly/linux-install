@@ -1,0 +1,270 @@
+#!/bin/bash
+
+# Script to format and mount data disk
+# Run this script after attaching a new disk to your VM
+# This script is safe to re-run multiple times
+
+set -e  # Exit on any error
+
+echo "=================================="
+echo "Data Disk Setup"
+echo "=================================="
+echo "Started at: $(date '+%Y-%m-%d %H:%M:%S')"
+echo ""
+
+# Check if running as root
+if [ "$EUID" -eq 0 ]; then 
+    echo "Please do not run as root. Run as your normal user."
+    exit 1
+fi
+
+# Step 1: Identify the disk
+echo "Current disk configuration:"
+lsblk
+echo ""
+
+# Check if /mnt/data is already mounted
+if mountpoint -q /mnt/data 2>/dev/null; then
+    echo "✓ /mnt/data is already mounted"
+    MOUNTED_DEVICE=$(df /mnt/data | tail -1 | awk '{print $1}')
+    echo "  Currently mounted: $MOUNTED_DEVICE"
+    read -p "Do you want to reconfigure this disk? (yes/no): " RECONFIG
+    
+    if [ "$RECONFIG" != "yes" ]; then
+        echo "Skipping disk setup..."
+        SKIP_DISK_SETUP=true
+        # Extract device name for summary
+        DISK_NAME=$(echo $MOUNTED_DEVICE | sed 's|/dev/||' | sed 's/[0-9]*$//')
+        DISK_PATH="/dev/$DISK_NAME"
+        UUID=$(sudo blkid -s UUID -o value $DISK_PATH)
+    else
+        SKIP_DISK_SETUP=false
+        # Extract device name from mounted device (e.g., /dev/sdb from /dev/sdb or /dev/sdb1)
+        DISK_NAME=$(echo $MOUNTED_DEVICE | sed 's|/dev/||' | sed 's/[0-9]*$//')
+        DISK_PATH="/dev/$DISK_NAME"
+    fi
+else
+    SKIP_DISK_SETUP=false
+    read -p "Enter the device name for your data disk (e.g., sdb): " DISK_NAME
+    DISK_PATH="/dev/$DISK_NAME"
+    
+    # Verify the disk exists
+    if [ ! -b "$DISK_PATH" ]; then
+        echo "Error: $DISK_PATH does not exist!"
+        exit 1
+    fi
+fi
+
+# Disk setup section
+if [ "$SKIP_DISK_SETUP" = false ]; then
+    # Show disk information
+    echo ""
+    echo "Disk information for $DISK_PATH:"
+    sudo fdisk -l $DISK_PATH 2>/dev/null || true
+
+    # Check if disk has any existing data
+    if sudo blkid $DISK_PATH &>/dev/null; then
+        echo ""
+        echo "WARNING: $DISK_PATH appears to have existing data!"
+        sudo blkid $DISK_PATH
+        read -p "Do you want to WIPE and REFORMAT? This will ERASE ALL DATA! (yes/no): " CONFIRM
+    else
+        echo ""
+        echo "WARNING: This will FORMAT $DISK_PATH and ERASE all data on it!"
+        read -p "Are you sure you want to continue? (yes/no): " CONFIRM
+    fi
+
+    if [ "$CONFIRM" != "yes" ]; then
+        echo "Aborting disk setup."
+        exit 1
+    fi
+
+    # Wipe filesystem signatures and format the disk
+    echo ""
+    echo "Wiping any existing filesystem signatures on $DISK_PATH..."
+    sudo wipefs -a $DISK_PATH
+
+    echo "Formatting $DISK_PATH with ext4..."
+    sudo mkfs.ext4 -F -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard $DISK_PATH
+
+    echo "✓ Disk formatted successfully"
+
+    # Create mount point if it doesn't exist
+    if [ ! -d /mnt/data ]; then
+        echo "Creating mount point /mnt/data..."
+        sudo mkdir -p /mnt/data
+    else
+        echo "✓ Mount point /mnt/data already exists"
+    fi
+
+    # Mount the disk
+    echo "Mounting $DISK_PATH to /mnt/data..."
+    sudo mount $DISK_PATH /mnt/data
+
+    # Verify mount
+    if ! mountpoint -q /mnt/data; then
+        echo "✗ Failed to mount /mnt/data"
+        echo "Checking dmesg for errors..."
+        sudo dmesg | tail -20
+        exit 1
+    fi
+
+    echo "✓ Disk mounted successfully"
+
+    # Get UUID
+    echo "Getting disk UUID..."
+    UUID=$(sudo blkid -s UUID -o value $DISK_PATH)
+    echo "UUID: $UUID"
+
+    # Add to fstab (check if already exists)
+    echo "Checking /etc/fstab..."
+    if grep -q "UUID=$UUID" /etc/fstab; then
+        echo "✓ Entry already exists in /etc/fstab"
+    elif grep -q "/mnt/data" /etc/fstab; then
+        echo "WARNING: /mnt/data entry exists in /etc/fstab with different UUID"
+        echo "Updating /etc/fstab..."
+        # Remove old entry and add new one
+        sudo sed -i '\|/mnt/data|d' /etc/fstab
+        FSTAB_ENTRY="UUID=$UUID /mnt/data ext4 discard,defaults,nofail 0 2"
+        echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab
+        echo "✓ Updated /etc/fstab"
+    else
+        echo "Adding to /etc/fstab..."
+        FSTAB_ENTRY="UUID=$UUID /mnt/data ext4 discard,defaults,nofail 0 2"
+        echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab
+        echo "✓ Added to /etc/fstab"
+    fi
+
+    # Test fstab
+    echo "Testing fstab entry..."
+    sudo umount /mnt/data
+    sudo mount -a
+
+    # Verify mount
+    if mountpoint -q /mnt/data; then
+        echo "✓ /mnt/data mounted successfully from fstab!"
+    else
+        echo "✗ Failed to mount /mnt/data from fstab"
+        exit 1
+    fi
+
+    # Set ownership
+    echo "Setting ownership to $USER..."
+    sudo chown -R $USER:$USER /mnt/data
+
+    echo "✓ Disk setup completed"
+fi
+
+echo ""
+echo "=================================="
+echo "Docker Configuration"
+echo "=================================="
+echo ""
+
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "⚠ Docker is not installed. Skipping Docker configuration."
+    SKIP_DOCKER=true
+else
+    echo "✓ Docker is installed"
+    SKIP_DOCKER=false
+fi
+
+if [ "$SKIP_DOCKER" = false ]; then
+    # Stop Docker service
+    echo "Stopping Docker service..."
+    sudo systemctl stop docker 2>/dev/null || true
+
+    # Create docker directory on data disk
+    echo "Creating Docker directory on /mnt/data..."
+    sudo mkdir -p /mnt/data/docker
+
+    # Configure Docker daemon
+    echo "Configuring Docker to use /mnt/data/docker..."
+    
+    # Check if jq is installed
+    if ! command -v jq &> /dev/null; then
+        echo "jq is not installed. Installing..."
+        sudo apt-get update
+        sudo apt-get install -y jq
+    fi
+
+    # Update daemon.json using jq
+    DOCKER_CONFIG="/etc/docker/daemon.json"
+    if [ ! -f "$DOCKER_CONFIG" ]; then
+        echo "{}" | sudo tee "$DOCKER_CONFIG" > /dev/null
+    fi
+    sudo jq '."data-root" = "/mnt/data/docker"' "$DOCKER_CONFIG" | sudo tee "$DOCKER_CONFIG.tmp" > /dev/null && sudo mv "$DOCKER_CONFIG.tmp" "$DOCKER_CONFIG"
+
+    echo "✓ Docker daemon.json configured"
+
+    # Restart Docker
+    echo "Starting Docker service..."
+    sudo systemctl start docker
+    sudo systemctl enable docker
+
+    # Verify Docker configuration
+    echo "Verifying Docker configuration..."
+    sleep 2  # Give Docker a moment to start
+
+    DOCKER_ROOT=$(docker info 2>/dev/null | grep "Docker Root Dir" | awk '{print $4}')
+
+    if [ "$DOCKER_ROOT" = "/mnt/data/docker" ]; then
+        echo "✓ Docker is using /mnt/data/docker"
+    elif [ -z "$DOCKER_ROOT" ]; then
+        echo "⚠ Could not verify Docker root directory. Docker may still be starting..."
+    else
+        echo "✗ Docker is NOT using /mnt/data/docker (currently: $DOCKER_ROOT)"
+        echo "You may need to restart Docker manually"
+    fi
+    
+    echo "✓ Docker configuration completed"
+fi
+
+echo ""
+echo "=================================="
+echo "Shell Configuration"
+echo "=================================="
+echo ""
+
+# Add default directory to .bashrc (if not already there)
+if ! grep -q "cd /mnt/data" ~/.bashrc; then
+    echo 'cd /mnt/data 2>/dev/null || true' >> ~/.bashrc
+    echo "✓ Added default directory to .bashrc"
+else
+    echo "✓ Default directory already in .bashrc"
+fi
+
+# Final summary
+echo ""
+echo "=================================="
+echo "Setup Complete!"
+echo "=================================="
+echo "Completed at: $(date '+%Y-%m-%d %H:%M:%S')"
+echo ""
+echo "Summary:"
+echo "  Disk: $DISK_PATH"
+echo "  UUID: $UUID"
+echo "  Mount point: /mnt/data"
+if [ "$SKIP_DOCKER" = false ]; then
+    echo "  Docker root: /mnt/data/docker"
+else
+    echo "  Docker: Not installed (skipped configuration)"
+fi
+echo "  Shell: New sessions will start in /mnt/data"
+echo ""
+echo "Disk usage:"
+df -h /mnt/data
+echo ""
+echo "Contents of /mnt/data:"
+ls -la /mnt/data
+echo ""
+echo "Next steps:"
+if [ "$SKIP_DOCKER" = false ]; then
+    echo "  - Test Docker: docker run hello-world"
+fi
+echo "  - Check disk usage: df -h /mnt/data"
+echo "  - Create directory structure if needed"
+echo "  - Log out and log back in for shell changes to take effect"
+echo ""
+echo "INSTALLATION DONE!"
