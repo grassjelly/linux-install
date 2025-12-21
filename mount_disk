@@ -13,7 +13,7 @@ echo "Started at: $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
 
 # Check if running as root
-if [ "$EUID" -eq 0 ]; then 
+if [ "$EUID" -eq 0 ]; then
     echo "Please do not run as root. Run as your normal user."
     exit 1
 fi
@@ -28,26 +28,20 @@ if mountpoint -q /mnt/data 2>/dev/null; then
     echo "✓ /mnt/data is already mounted"
     MOUNTED_DEVICE=$(df /mnt/data | tail -1 | awk '{print $1}')
     echo "  Currently mounted: $MOUNTED_DEVICE"
-    read -p "Do you want to reconfigure this disk? (yes/no): " RECONFIG
-    
-    if [ "$RECONFIG" != "yes" ]; then
-        echo "Skipping disk setup..."
-        SKIP_DISK_SETUP=true
-        # Extract device name for summary
-        DISK_NAME=$(echo $MOUNTED_DEVICE | sed 's|/dev/||' | sed 's/[0-9]*$//')
-        DISK_PATH="/dev/$DISK_NAME"
-        UUID=$(sudo blkid -s UUID -o value $DISK_PATH)
-    else
-        SKIP_DISK_SETUP=false
-        # Extract device name from mounted device (e.g., /dev/sdb from /dev/sdb or /dev/sdb1)
-        DISK_NAME=$(echo $MOUNTED_DEVICE | sed 's|/dev/||' | sed 's/[0-9]*$//')
-        DISK_PATH="/dev/$DISK_NAME"
-    fi
+    echo "  Disk is already mounted. Skipping reconfiguration."
+    SKIP_DISK_SETUP=true
+
+    # Extract device name for summary
+    DISK_NAME=$(echo $MOUNTED_DEVICE | sed 's|/dev/||' | sed 's/[0-9]*$//')
+    DISK_PATH="/dev/$DISK_NAME"
+    UUID=$(sudo blkid -s UUID -o value $DISK_PATH)
+
+
 else
     SKIP_DISK_SETUP=false
     read -p "Enter the device name for your data disk (e.g., sdb): " DISK_NAME
     DISK_PATH="/dev/$DISK_NAME"
-    
+
     # Verify the disk exists
     if [ ! -b "$DISK_PATH" ]; then
         echo "Error: $DISK_PATH does not exist!"
@@ -181,7 +175,7 @@ if [ "$SKIP_DOCKER" = false ]; then
 
     # Configure Docker daemon
     echo "Configuring Docker to use /mnt/data/docker..."
-    
+
     # Check if jq is installed
     if ! command -v jq &> /dev/null; then
         echo "jq is not installed. Installing..."
@@ -198,27 +192,120 @@ if [ "$SKIP_DOCKER" = false ]; then
 
     echo "✓ Docker daemon.json configured"
 
-    # Restart Docker
-    echo "Starting Docker service..."
-    sudo systemctl start docker
-    sudo systemctl enable docker
+    # Note: Docker will be started after containerd configuration
+    echo "✓ Docker configuration completed (service will start after containerd)"
+fi
 
-    # Verify Docker configuration
-    echo "Verifying Docker configuration..."
-    sleep 2  # Give Docker a moment to start
+echo ""
+echo "=================================="
+echo "Containerd Configuration"
+echo "=================================="
+echo ""
 
-    DOCKER_ROOT=$(docker info 2>/dev/null | grep "Docker Root Dir" | awk '{print $4}')
+# Check if containerd is installed
+if ! command -v containerd &> /dev/null; then
+    echo "⚠ Containerd is not installed. Skipping containerd configuration."
+    SKIP_CONTAINERD=true
+else
+    echo "✓ Containerd is installed"
+    SKIP_CONTAINERD=false
+fi
 
-    if [ "$DOCKER_ROOT" = "/mnt/data/docker" ]; then
-        echo "✓ Docker is using /mnt/data/docker"
-    elif [ -z "$DOCKER_ROOT" ]; then
-        echo "⚠ Could not verify Docker root directory. Docker may still be starting..."
+if [ "$SKIP_CONTAINERD" = false ]; then
+    # Stop containerd service (docker already stopped if applicable)
+    echo "Stopping containerd service..."
+    sudo systemctl stop containerd 2>/dev/null || true
+
+    # Create containerd directory on data disk
+    echo "Creating containerd directory on /mnt/data..."
+    sudo mkdir -p /mnt/data/containerd
+
+    # Check if old containerd data exists
+    if [ -d /var/lib/containerd ] && [ "$(sudo ls -A /var/lib/containerd 2>/dev/null)" ]; then
+        echo "Found existing containerd data in /var/lib/containerd"
+        CONTAINERD_SIZE=$(sudo du -sh /var/lib/containerd 2>/dev/null | awk '{print $1}')
+        echo "  Size: $CONTAINERD_SIZE"
+        read -p "Do you want to migrate existing containerd data to /mnt/data/containerd? (yes/no): " MIGRATE_CONTAINERD
+        
+        if [ "$MIGRATE_CONTAINERD" = "yes" ]; then
+            echo "Migrating containerd data (this may take a while)..."
+            sudo rsync -aP /var/lib/containerd/ /mnt/data/containerd/
+            echo "✓ Containerd data migrated"
+            
+            # Backup old directory
+            echo "Backing up old containerd directory..."
+            sudo mv /var/lib/containerd /var/lib/containerd.old
+            echo "✓ Old directory backed up to /var/lib/containerd.old"
+            echo "  You can remove it later with: sudo rm -rf /var/lib/containerd.old"
+        fi
+    fi
+
+    # Configure containerd
+    echo "Configuring containerd to use /mnt/data/containerd..."
+    
+    # Create containerd config directory
+    sudo mkdir -p /etc/containerd
+    
+    # Generate default config if it doesn't exist or back it up if it does
+    if [ -f /etc/containerd/config.toml ]; then
+        echo "Backing up existing containerd config..."
+        sudo cp /etc/containerd/config.toml /etc/containerd/config.toml.backup
     else
-        echo "✗ Docker is NOT using /mnt/data/docker (currently: $DOCKER_ROOT)"
-        echo "You may need to restart Docker manually"
+        echo "Generating default containerd configuration..."
+        sudo containerd config default | sudo tee /etc/containerd/config.toml > /dev/null
     fi
     
-    echo "✓ Docker configuration completed"
+    # Update the root directory in config.toml
+    echo "Updating containerd root directory..."
+    sudo sed -i 's|root = "/var/lib/containerd"|root = "/mnt/data/containerd"|g' /etc/containerd/config.toml
+    
+    # Verify the change
+    if grep -q 'root = "/mnt/data/containerd"' /etc/containerd/config.toml; then
+        echo "✓ Containerd config.toml updated"
+    else
+        echo "⚠ Warning: Could not verify containerd config update"
+        echo "  Please manually check /etc/containerd/config.toml"
+    fi
+
+    # Start containerd first, then docker
+    echo "Starting containerd service..."
+    sudo systemctl start containerd
+    sudo systemctl enable containerd
+
+    if [ "$SKIP_DOCKER" = false ]; then
+        echo "Starting Docker service..."
+        sudo systemctl start docker
+        sudo systemctl enable docker
+    fi
+
+    # Verify containerd configuration
+    echo "Verifying containerd configuration..."
+    sleep 2  # Give containerd a moment to start
+
+    if [ -d /mnt/data/containerd ] && sudo systemctl is-active --quiet containerd; then
+        echo "✓ Containerd is running and using /mnt/data/containerd"
+    else
+        echo "⚠ Could not fully verify containerd configuration"
+        echo "  Check status with: sudo systemctl status containerd"
+    fi
+
+    # Verify Docker configuration if applicable
+    if [ "$SKIP_DOCKER" = false ]; then
+        echo "Verifying Docker configuration..."
+        sleep 1
+        DOCKER_ROOT=$(docker info 2>/dev/null | grep "Docker Root Dir" | awk '{print $4}')
+
+        if [ "$DOCKER_ROOT" = "/mnt/data/docker" ]; then
+            echo "✓ Docker is using /mnt/data/docker"
+        elif [ -z "$DOCKER_ROOT" ]; then
+            echo "⚠ Could not verify Docker root directory. Docker may still be starting..."
+        else
+            echo "✗ Docker is NOT using /mnt/data/docker (currently: $DOCKER_ROOT)"
+            echo "You may need to restart Docker manually"
+        fi
+    fi
+
+    echo "✓ Containerd configuration completed"
 fi
 
 echo ""
@@ -251,6 +338,11 @@ if [ "$SKIP_DOCKER" = false ]; then
 else
     echo "  Docker: Not installed (skipped configuration)"
 fi
+if [ "$SKIP_CONTAINERD" = false ]; then
+    echo "  Containerd root: /mnt/data/containerd"
+else
+    echo "  Containerd: Not installed (skipped configuration)"
+fi
 echo "  Shell: New sessions will start in /mnt/data"
 echo ""
 echo "Disk usage:"
@@ -264,7 +356,11 @@ if [ "$SKIP_DOCKER" = false ]; then
     echo "  - Test Docker: docker run hello-world"
 fi
 echo "  - Check disk usage: df -h /mnt/data"
+echo "  - Monitor boot disk: sudo du -sh /var/lib/* | sort -h"
 echo "  - Create directory structure if needed"
+if [ -d /var/lib/containerd.old ]; then
+    echo "  - After verification, clean up: sudo rm -rf /var/lib/containerd.old"
+fi
 echo "  - Log out and log back in for shell changes to take effect"
 echo ""
 echo "INSTALLATION DONE!"
