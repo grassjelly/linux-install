@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+# List of scripts to execute in order
+scripts=(
+  "dev_tools"
+  "nvidia"
+  "docker"
+  "mount_disk"
+)
+
+# Loop through the scripts and execute them
+for script in "${scripts[@]}"; do
+  echo "Running ${script}..."
+  if [ -f "./${script}" ]; then
+    bash "./${script}"
+  else
+    echo "Warning: Script './${script}' not found."
+  fi
+  echo "${script} finished."
+  echo "---------------------"
+done
+
+echo "All scripts executed successfully."
