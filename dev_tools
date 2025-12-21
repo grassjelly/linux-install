@@ -27,7 +27,7 @@ curl -LsSf https://astral.sh/uv/install.sh | bash
 #Set tmuxinator config
 echo 'alias mux="tmuxinator"' >> ~/.bashrc
 echo 'alias setmux="export TMUXINATOR_CONFIG=\$PWD"' >> ~/.bashrc
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+[ ! -d ~/.tmux/plugins/tpm ] && git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 cp tmux.conf $HOME/.tmux.conf
 
 #Install Gemini
