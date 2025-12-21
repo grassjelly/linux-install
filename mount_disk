@@ -308,6 +308,27 @@ if [ "$SKIP_CONTAINERD" = false ]; then
     echo "✓ Containerd configuration completed"
 fi
 
+echo ""
+echo "=================================="
+echo "Dev Env Configuration"
+echo "=================================="
+echo ""
+
+# Create dev directory
+echo "Creating dev directory on /mnt/data..."
+sudo mkdir -p /mnt/data/dev
+sudo chown -R $USER:$USER /mnt/data/dev
+echo "✓ Dev directory created"
+
+# Add dev alias
+echo "Adding 'dev' alias to ~/.bashrc..."
+if grep -q "alias dev=" ~/.bashrc; then
+    echo "✓ 'dev' alias already exists in ~/.bashrc"
+else
+    echo "alias dev='cd /mnt/data/dev'" >> ~/.bashrc
+    echo "✓ 'dev' alias added to ~/.bashrc"
+fi
+
 # Final summary
 echo ""
 echo "=================================="
