@@ -257,7 +257,7 @@ if [ "$SKIP_CONTAINERD" = false ]; then
     
     # Update the root directory in config.toml
     echo "Updating containerd root directory..."
-    sudo sed -i 's|root = "/var/lib/containerd"|root = "/mnt/data/containerd"|g' /etc/containerd/config.toml
+    sudo sed -i 's|#\? *root = "/var/lib/containerd"|root = "/mnt/data/containerd"|g' /etc/containerd/config.toml
     
     # Verify the change
     if grep -q 'root = "/mnt/data/containerd"' /etc/containerd/config.toml; then
