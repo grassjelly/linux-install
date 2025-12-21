@@ -308,20 +308,6 @@ if [ "$SKIP_CONTAINERD" = false ]; then
     echo "✓ Containerd configuration completed"
 fi
 
-echo ""
-echo "=================================="
-echo "Shell Configuration"
-echo "=================================="
-echo ""
-
-# Add default directory to .bashrc (if not already there)
-if ! grep -q "cd /mnt/data" ~/.bashrc; then
-    echo 'cd /mnt/data 2>/dev/null || true' >> ~/.bashrc
-    echo "✓ Added default directory to .bashrc"
-else
-    echo "✓ Default directory already in .bashrc"
-fi
-
 # Final summary
 echo ""
 echo "=================================="
