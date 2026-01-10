@@ -26,9 +26,9 @@ if ! command -v crontab &> /dev/null; then
     fi
 fi
 
-# Copy auto-shutdown script to system bin
+# Copy auto-shutdown script to system bin with user home substitution
 echo "Installing auto-shutdown script..."
-sudo cp bin/auto-shutdown /usr/local/bin/
+sed "s|__USER_HOME__|$HOME|g" bin/auto-shutdown | sudo tee /usr/local/bin/auto-shutdown > /dev/null
 sudo chmod +x /usr/local/bin/auto-shutdown
 
 # Create log file with proper permissions
