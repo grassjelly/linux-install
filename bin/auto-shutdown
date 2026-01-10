@@ -7,85 +7,133 @@ FILE_ACTIVITY_MINUTES=120  # Threshold for file activity in ~/.claude/projects
 LOG_FILE="/var/log/auto-shutdown.log"
 PROJECTS_DIR="__USER_HOME__/.claude/projects"
 HARD_SHUTDOWN_HOUR=1  # 1 AM SGT
+ACTIVITY_TIMESTAMP_FILE="/tmp/last_activity"
 
 # Function to log with timestamp
 log_message() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
 }
 
+# Function to check for hard shutdown time (1 AM SGT)
+check_hard_shutdown() {
+  local current_hour_sgt=$(TZ='Asia/Singapore' date '+%H')
+  local current_minute_sgt=$(TZ='Asia/Singapore' date '+%M')
+
+  log_message "Current time SGT: ${current_hour_sgt}:${current_minute_sgt}"
+
+  if [ "$current_hour_sgt" -eq "$HARD_SHUTDOWN_HOUR" ] && [ "$current_minute_sgt" -lt 5 ]; then
+    log_message "!!! HARD SHUTDOWN TRIGGERED - Scheduled 1 AM SGT shutdown !!!"
+    logger -t auto-shutdown "Hard shutdown at 1 AM SGT"
+    sudo shutdown -h now
+    exit 0
+  fi
+}
+
+# Function to check CPU usage
+# Returns: 0 if CPU is above threshold (active), 1 if below (idle)
+check_cpu_usage() {
+  local cpu_usage=$(top -bn2 -d 0.5 | grep "Cpu(s)" | tail -1 | awk '{print $2}' | cut -d'%' -f1)
+  log_message "Current CPU usage: ${cpu_usage}%"
+
+  if (( $(awk "BEGIN {print ($cpu_usage > $CPU_THRESHOLD)}") )); then
+    return 0  # CPU is active
+  else
+    return 1  # CPU is idle
+  fi
+}
+
+# Function to check file activity in Claude projects directory
+# Returns: 0 if recent file activity (active), 1 if no recent activity (idle)
+check_file_activity() {
+  if [ ! -d "$PROJECTS_DIR" ]; then
+    log_message "Projects directory does not exist: $PROJECTS_DIR"
+    return 1  # No directory = idle
+  fi
+
+  # Find the most recently modified file in any project directory
+  local newest_file=$(find "$PROJECTS_DIR" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+
+  if [ -z "$newest_file" ]; then
+    log_message "No files found in projects directory"
+    return 1  # No files = idle
+  fi
+
+  local last_modified=$(stat -c %Y "$newest_file" 2>/dev/null)
+  local now=$(date +%s)
+  local minutes_since_modified=$(( ($now - $last_modified) / 60 ))
+
+  log_message "Newest file in projects: $newest_file (modified ${minutes_since_modified} minutes ago)"
+
+  if [ $minutes_since_modified -le $FILE_ACTIVITY_MINUTES ]; then
+    log_message "Recent file activity detected - system not idle"
+    return 0  # Recent activity = active
+  else
+    log_message "No recent file activity (threshold: ${FILE_ACTIVITY_MINUTES} minutes)"
+    return 1  # No recent activity = idle
+  fi
+}
+
+# Function to update activity timestamp
+update_activity_timestamp() {
+  date +%s > "$ACTIVITY_TIMESTAMP_FILE"
+  log_message "System active - resetting idle timer (CPU active or file modified within ${FILE_ACTIVITY_MINUTES} mins)"
+}
+
+# Function to evaluate idle time and trigger shutdown if needed
+evaluate_idle_shutdown() {
+  local cpu_active=false
+  local file_active=false
+
+  # Check CPU usage
+  if check_cpu_usage; then
+    cpu_active=true
+  fi
+
+  # Check file activity
+  if check_file_activity; then
+    file_active=true
+  fi
+
+  # Update activity timestamp if any activity detected
+  if [ "$cpu_active" = true ] || [ "$file_active" = true ]; then
+    update_activity_timestamp
+    return
+  fi
+
+  log_message "System below activity threshold - idle timer continues"
+
+  # Check if we have an activity timestamp file
+  if [ ! -f "$ACTIVITY_TIMESTAMP_FILE" ]; then
+    log_message "No activity file found - creating new baseline"
+    date +%s > "$ACTIVITY_TIMESTAMP_FILE"
+    return
+  fi
+
+  # Calculate idle time
+  local last_active=$(cat "$ACTIVITY_TIMESTAMP_FILE")
+  local now=$(date +%s)
+  local idle_time=$(( ($now - $last_active) / 60 ))
+
+  log_message "Idle time accumulated: ${idle_time} minutes (threshold: ${IDLE_MINUTES} minutes)"
+
+  # Trigger shutdown if idle time exceeded
+  if [ $idle_time -gt $IDLE_MINUTES ]; then
+    if [ "$file_active" = false ]; then
+      log_message "!!! SHUTDOWN TRIGGERED - Idle time exceeded threshold AND no recent file activity !!!"
+      logger -t auto-shutdown "Shutting down due to ${idle_time} minutes of inactivity"
+      sudo shutdown -h now
+    else
+      log_message "Idle time exceeded but recent file activity detected - shutdown prevented"
+    fi
+  fi
+}
+
+# Main execution
 log_message "=== Idle check starting ==="
 log_message "Projects directory: $PROJECTS_DIR"
 
-# Check for hard shutdown time (1 AM SGT = UTC+8)
-CURRENT_HOUR_SGT=$(TZ='Asia/Singapore' date '+%H')
-CURRENT_MINUTE_SGT=$(TZ='Asia/Singapore' date '+%M')
-log_message "Current time SGT: ${CURRENT_HOUR_SGT}:${CURRENT_MINUTE_SGT}"
+# Check for hard shutdown first (overrides all other checks)
+check_hard_shutdown
 
-if [ "$CURRENT_HOUR_SGT" -eq "$HARD_SHUTDOWN_HOUR" ] && [ "$CURRENT_MINUTE_SGT" -lt 5 ]; then
-  log_message "!!! HARD SHUTDOWN TRIGGERED - Scheduled 1 AM SGT shutdown !!!"
-  logger -t auto-shutdown "Hard shutdown at 1 AM SGT"
-  sudo shutdown -h now
-  exit 0
-fi
-
-# Get CPU usage
-CPU_USAGE=$(top -bn2 -d 0.5 | grep "Cpu(s)" | tail -1 | awk '{print $2}' | cut -d'%' -f1)
-log_message "Current CPU usage: ${CPU_USAGE}%"
-
-# Check file activity in ~/.claude/projects
-FILE_ACTIVITY_IDLE=true
-if [ -d "$PROJECTS_DIR" ]; then
-  # Get the newest file's modification time
-  NEWEST_FILE=$(ls -lt "$PROJECTS_DIR" 2>/dev/null | grep -v '^total' | grep -v '^d' | head -1 | awk '{for(i=9;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ $//')
-
-  if [ -n "$NEWEST_FILE" ]; then
-    NEWEST_FILE_PATH="$PROJECTS_DIR/$NEWEST_FILE"
-    if [ -e "$NEWEST_FILE_PATH" ]; then
-      LAST_MODIFIED=$(stat -c %Y "$NEWEST_FILE_PATH" 2>/dev/null)
-      NOW=$(date +%s)
-      MINUTES_SINCE_MODIFIED=$(( ($NOW - $LAST_MODIFIED) / 60 ))
-
-      log_message "Newest file in projects: $NEWEST_FILE (modified ${MINUTES_SINCE_MODIFIED} minutes ago)"
-
-      if [ $MINUTES_SINCE_MODIFIED -le $FILE_ACTIVITY_MINUTES ]; then
-        FILE_ACTIVITY_IDLE=false
-        log_message "Recent file activity detected - system not idle"
-      else
-        log_message "No recent file activity (threshold: ${FILE_ACTIVITY_MINUTES} minutes)"
-      fi
-    fi
-  else
-    log_message "No files found in projects directory"
-  fi
-else
-  log_message "Projects directory does not exist: $PROJECTS_DIR"
-fi
-
-# Store timestamp of last activity based on CPU or file activity
-if (( $(echo "$CPU_USAGE > $CPU_THRESHOLD" | bc -l) )) || [ "$FILE_ACTIVITY_IDLE" = false ]; then
-  date +%s > /tmp/last_activity
-  log_message "System active - resetting idle timer (CPU active or file modified within ${FILE_ACTIVITY_MINUTES} mins)"
-else
-  log_message "System below activity threshold - idle timer continues"
-fi
-
-# Check if idle long enough - only count idle time when BOTH CPU is low AND no recent file activity
-if [ -f /tmp/last_activity ]; then
-  LAST_ACTIVE=$(cat /tmp/last_activity)
-  NOW=$(date +%s)
-  IDLE_TIME=$(( ($NOW - $LAST_ACTIVE) / 60 ))
-
-  log_message "Idle time accumulated: ${IDLE_TIME} minutes (threshold: ${IDLE_MINUTES} minutes)"
-
-  # Only shutdown if truly idle (both low CPU and no recent file activity)
-  if [ $IDLE_TIME -gt $IDLE_MINUTES ] && [ "$FILE_ACTIVITY_IDLE" = true ]; then
-    log_message "!!! SHUTDOWN TRIGGERED - Idle time exceeded threshold AND no recent file activity !!!"
-    logger -t auto-shutdown "Shutting down due to ${IDLE_TIME} minutes of inactivity"
-    sudo shutdown -h now
-  elif [ $IDLE_TIME -gt $IDLE_MINUTES ] && [ "$FILE_ACTIVITY_IDLE" = false ]; then
-    log_message "Idle time exceeded but recent file activity detected - shutdown prevented"
-  fi
-else
-  log_message "No activity file found - creating new baseline"
-  date +%s > /tmp/last_activity
-fi
+# Evaluate system activity and idle shutdown
+evaluate_idle_shutdown
