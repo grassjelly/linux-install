@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo "Setting up auto-shutdown service..."
+
+# Install cron if not already installed
+if ! command -v crontab &> /dev/null; then
+    echo "Installing cron..."
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update
+        sudo apt-get install -y cron
+    elif command -v yum &> /dev/null; then
+        sudo yum install -y cronie
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y cronie
+    else
+        echo "Error: Unable to install cron. Please install it manually."
+        exit 1
+    fi
+
+    # Ensure cron service is enabled and started
+    if command -v systemctl &> /dev/null; then
+        sudo systemctl enable cron 2>/dev/null || sudo systemctl enable crond 2>/dev/null || true
+        sudo systemctl start cron 2>/dev/null || sudo systemctl start crond 2>/dev/null || true
+    fi
+fi
+
+# Copy auto-shutdown script to system bin
+echo "Installing auto-shutdown script..."
+sudo cp bin/auto-shutdown /usr/local/bin/
+sudo chmod +x /usr/local/bin/auto-shutdown
+
+# Create log file with proper permissions
+echo "Setting up log file..."
+sudo touch /var/log/auto-shutdown.log
+sudo chmod 666 /var/log/auto-shutdown.log
+
+# Add to crontab (runs every 5 minutes)
+CRON_JOB="*/5 * * * * /usr/local/bin/auto-shutdown"
+CRON_COMMENT="# Auto-shutdown idle check"
+
+# Check if cron job already exists
+if crontab -l 2>/dev/null | grep -q "/usr/local/bin/auto-shutdown"; then
+    echo "Crontab entry already exists, skipping..."
+else
+    echo "Adding crontab entry..."
+    (crontab -l 2>/dev/null || echo "") | { cat; echo "$CRON_COMMENT"; echo "$CRON_JOB"; } | crontab -
+    echo "Crontab entry added successfully!"
+fi
+
+echo ""
+echo "Setup complete! Auto-shutdown will check every 5 minutes."
+echo "Configuration:"
+echo "  - CPU threshold: 5%"
+echo "  - Idle timeout: 30 minutes"
+echo "  - File activity threshold: 120 minutes"
+echo "  - Hard shutdown: 1 AM SGT"
+echo "  - Log file: /var/log/auto-shutdown.log"
+echo ""
+echo "To view logs: tail -f /var/log/auto-shutdown.log"
+echo "To view crontab: crontab -l"
+echo "To remove: crontab -e (then delete the auto-shutdown line)"
