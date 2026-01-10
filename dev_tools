@@ -42,6 +42,9 @@ npm install -g @google/gemini-cli
 # Install OpenCode
 curl -fsSL https://opencode.ai/install | bash
 
+# Install Claude Code
+curl -fsSL https://claude.ai/install.sh | bash
+
 # Install Glow MD viewer
 sudo snap install glow
 
