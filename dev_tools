@@ -3,6 +3,7 @@
 set -e
 
 sudo apt update && sudo apt install -y \
+  locales \
   nano \
   rsync \
   git \
@@ -14,6 +15,9 @@ sudo apt update && sudo apt install -y \
   unzip \
   tmuxinator
 
+#Set locale
+sudo locale-gen en_US.UTF-8
+sudo update-locale LANG=en_US.UTF-8
 
 #Install nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
