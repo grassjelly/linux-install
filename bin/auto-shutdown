@@ -63,23 +63,26 @@ fi
 # Store timestamp of last activity based on CPU or file activity
 if (( $(echo "$CPU_USAGE > $CPU_THRESHOLD" | bc -l) )) || [ "$FILE_ACTIVITY_IDLE" = false ]; then
   date +%s > /tmp/last_activity
-  log_message "System active - resetting idle timer"
+  log_message "System active - resetting idle timer (CPU active or file modified within ${FILE_ACTIVITY_MINUTES} mins)"
 else
-  log_message "System below activity threshold"
+  log_message "System below activity threshold - idle timer continues"
 fi
 
-# Check if idle long enough
+# Check if idle long enough - only count idle time when BOTH CPU is low AND no recent file activity
 if [ -f /tmp/last_activity ]; then
   LAST_ACTIVE=$(cat /tmp/last_activity)
   NOW=$(date +%s)
   IDLE_TIME=$(( ($NOW - $LAST_ACTIVE) / 60 ))
 
-  log_message "Idle for ${IDLE_TIME} minutes (threshold: ${IDLE_MINUTES} minutes)"
+  log_message "Idle time accumulated: ${IDLE_TIME} minutes (threshold: ${IDLE_MINUTES} minutes)"
 
-  if [ $IDLE_TIME -gt $IDLE_MINUTES ]; then
-    log_message "!!! SHUTDOWN TRIGGERED - Idle time exceeded threshold !!!"
+  # Only shutdown if truly idle (both low CPU and no recent file activity)
+  if [ $IDLE_TIME -gt $IDLE_MINUTES ] && [ "$FILE_ACTIVITY_IDLE" = true ]; then
+    log_message "!!! SHUTDOWN TRIGGERED - Idle time exceeded threshold AND no recent file activity !!!"
     logger -t auto-shutdown "Shutting down due to ${IDLE_TIME} minutes of inactivity"
     sudo shutdown -h now
+  elif [ $IDLE_TIME -gt $IDLE_MINUTES ] && [ "$FILE_ACTIVITY_IDLE" = false ]; then
+    log_message "Idle time exceeded but recent file activity detected - shutdown prevented"
   fi
 else
   log_message "No activity file found - creating new baseline"
