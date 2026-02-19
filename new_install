@@ -6,7 +6,6 @@ set -e
 # List of scripts to execute in order
 scripts=(
   "dev_tools"
-  "nvidia"
   "docker"
   "mount_disk"
 )
