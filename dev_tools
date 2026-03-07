@@ -33,6 +33,11 @@ curl -LsSf https://astral.sh/uv/install.sh | bash
 #Set tmuxinator config
 echo 'alias mux="tmuxinator"' >> ~/.bashrc
 echo 'alias setmux="export TMUXINATOR_CONFIG=\$PWD"' >> ~/.bashrc
+cat >> ~/.bashrc << 'EOF'
+if [[ "$TERM_PROGRAM" == "ghostty" ]]; then
+  export TERM=xterm-256color
+fi
+EOF
 [ ! -d ~/.tmux/plugins/tpm ] && git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 cp tmux.conf $HOME/.tmux.conf
 
