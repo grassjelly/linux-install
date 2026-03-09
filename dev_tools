@@ -62,7 +62,7 @@ git clone https://github.com/ohmybash/oh-my-bash.git ~/.oh-my-bash
 cat >> ~/.bashrc << 'EOF'
 # Oh My Bash
 export OSH="$HOME/.oh-my-bash"
-OSH_THEME="robbyrussell"
+OSH_THEME="vscode"
 source "$OSH/oh-my-bash.sh"
 EOF
 
