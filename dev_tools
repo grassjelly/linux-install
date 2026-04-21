@@ -66,8 +66,4 @@ OSH_THEME="vscode"
 source "$OSH/oh-my-bash.sh"
 EOF
 
-# Fix ghostty
-infocmp -x xterm-256color | sed 's/xterm-256color/xterm-ghostty/' > ghostty.terminfo
-tic ghostty.terminfo
-
 echo "INSTALLATION DONE!"
